@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <title>RxJS Input Filters</title>
+
+    <meta name="description" content="RxJS Input Filters">
+    <meta name="author" content="@randytopliffe">
+
+    <link rel="stylesheet" type="text/css" href="./main.css">
+  </head>
+  <body>
+    <main>
+      <form name="filters">
+        <div id="form-errors"></div>
+
+        <input type="checkbox" id="is_buy" name="isBuy">
+        <label for="isBuy">Bought</label>
+
+        <div>
+          <span id="start-error"></span>
+          <label for="start">Start date:</label>
+
+          <input type="text" id="start" name="start"
+                value="2019-05-01">
+        </div>
+
+        <div>
+          <span id="end-error"></span>
+          <label for="start">End date:</label>
+
+          <input type="text" id="end" name="end"
+                value="2019-05-31">
+        </div>
+
+      </form>
+      <section id="transactions">
+        <article>Loading ...</article>
+      </section>
+    </main>
+    <script src="./js/index.js"></script>
+  </body>
+</html>
