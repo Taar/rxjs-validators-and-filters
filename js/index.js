@@ -2,7 +2,7 @@ import { of, combineLatest } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { filter, pluck, reduce, map, concatMap } from 'rxjs/operators'
 
-import { format, parse, isWithinRange } from 'date-fns';
+import { format, parse, isWithinRange } from 'date-fns'
 
 import getValidaters from './validation'
 
@@ -10,7 +10,7 @@ const validaters = getValidaters()
 
 const data = ajax.getJSON('/transactions.json').pipe(
   pluck('transactions'),
-);
+)
 
 /*
  * Data PipeLine/Filters
@@ -27,7 +27,7 @@ const inDateRange = ([start, end]) => filter(x => {
   // parsing error could occur here
   const date = parse(x.date)
   // adding one dya makes the range exclusive
-  return isWithinRange(date, start, end) 
+  return isWithinRange(date, start, end)
 })
 
 const filterData = combineLatest(data, validaters).pipe(
@@ -64,13 +64,16 @@ filterData.subscribe(transactions => {
   for (let transaction of transactions) {
     const { date, unit_price, is_buy, quantity } = transaction
     let article = document.createElement('article')
+    article.classList.add('transaction')
 
     let dateEl = document.createElement('div')
     dateEl.textContent = format(date, 'MMM, D')
+    dateEl.classList.add('date')
     article.appendChild(dateEl)
 
     let amount = document.createElement('div')
     amount.textContent = quantity * unit_price
+    amount.classList.add('amount')
     article.appendChild(amount)
 
     transactionsEl.appendChild(article)

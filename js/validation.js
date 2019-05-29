@@ -1,7 +1,7 @@
 import { fromEvent, of, combineLatest } from 'rxjs'
-import { startWith, map, concatMap, tap } from 'rxjs/operators'
+import { startWith, map, concatMap } from 'rxjs/operators'
 
-import { isValid,  parse, isBefore, isWithinRange, format } from 'date-fns';
+import { isValid,  parse, isBefore, isWithinRange, format } from 'date-fns'
 
 export class Field {
   constructor({fieldName, value, error=null}) {
@@ -127,7 +127,7 @@ export default function getValidaters() {
   formValidation.subscribe(form => {
     while(formErrorsEl.lastChild) {
       formErrorsEl.lastChild.remove()
-    } 
+    }
 
     for (let error of form.errors) {
       const errorEl = document.createElement('div')

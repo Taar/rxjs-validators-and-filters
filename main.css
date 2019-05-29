@@ -1,0 +1,14 @@
+.transactions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.transaction {
+  display: flex;
+  flex-direction: column;
+  max-width: 200px;
+  min-width: 200px;
+  margin: .5rem;
+  border: solid 1px black;
+}
