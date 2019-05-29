@@ -39,10 +39,10 @@ export class FormValidationError {
 const formatString = 'YYYY-MM-DD'
 
 export default function startValidation() {
-  const isBuyEl = document.getElementById('is_buy')
-  const isBuyEvent$ = fromEvent(isBuyEl, 'change').pipe(
-    map(event => event.target.checked),
-    startWith(isBuyEl.checked),
+  const transactionsTypeEl = document.getElementById('transaction-type')
+  const transactionTypeEvent$ = fromEvent(transactionsTypeEl, 'change').pipe(
+    map(event => event.target.value),
+    startWith(transactionsTypeEl.value),
   )
 
   const startDateEl = document.getElementById('start')
@@ -59,12 +59,12 @@ export default function startValidation() {
 
   const validDateRange = [parse('2019-05-01'), parse('2019-05-31')]
 
-  const [isBuyField$, startField$, endField$] = getFieldObservables(isBuyEvent$, startEvent$, endEvent$, validDateRange)
+  const [transactionTypeField$, startField$, endField$] = getFieldObservables(transactionTypeEvent$, startEvent$, endEvent$, validDateRange)
 
   startField$.subscribe(dateInputSubscriber)
   endField$.subscribe(dateInputSubscriber)
 
-  const form$ = buildFormObservable(isBuyField$, startField$, endField$)
+  const form$ = buildFormObservable(transactionTypeField$, startField$, endField$)
 
   // If there are any form validation errors, add them to the DOM
   const formErrorsEl = document.getElementById('form-errors')
@@ -83,8 +83,8 @@ export default function startValidation() {
   return form$
 }
 
-function buildFormObservable(isBuyField$, startField$, endField$) {
-  return combineLatest(isBuyField$, startField$, endField$).pipe(
+function buildFormObservable(transactionTypeField$, startField$, endField$) {
+  return combineLatest(transactionTypeField$, startField$, endField$).pipe(
     map(fields => Object.freeze(fields.reduce((fieldObj, field) => ({ ...fieldObj, [field.fieldName]: field }), {}))),
     concatMap(fields => {
       const { start, end } = fields
@@ -139,11 +139,11 @@ function validDateString(validDateRange) {
 
 // Transform input data into a Field object. The Field object will have additional
 // information regarding if the input that was emitted is valid or not
-function getFieldObservables(isBuy$, start$, end$, validDateRange) {
+function getFieldObservables(transactionType$, start$, end$, validDateRange) {
   return [
-    isBuy$.pipe(
-      // isBuy doesn't have any validation so we just create a Field object to emit
-      map(isBuy => Object.freeze(new Field({ fieldName: 'isBuy', value: isBuy })))
+    transactionType$.pipe(
+      // transactionType doesn't have any validation so we just create a Field object to emit
+      map(transactionType => Object.freeze(new Field({ fieldName: 'transaction-type', value: transactionType })))
     ),
     start$.pipe(
       map(dateString => [dateString, 'start']),

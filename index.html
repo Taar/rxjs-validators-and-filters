@@ -15,8 +15,14 @@
       <form name="filters">
         <div id="form-errors"></div>
 
-        <input type="checkbox" id="is_buy" name="isBuy">
-        <label for="isBuy">Bought</label>
+        <div>
+          <label for="transaction-type">Transaction type:</label>
+          <select id="transaction-type" name="transaction-type">
+            <option value="all" selected>All</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
 
         <div>
           <span id="start-error"></span>

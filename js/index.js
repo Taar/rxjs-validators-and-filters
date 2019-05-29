@@ -12,7 +12,9 @@ import startValidation from './validation'
 // transactions than each transactions by its self when manipulating the DOM
 const backToArray = reduce((data, x) => [...data, x], [])
 
-const filterIsBuy = isBuy => filter(x => x.is_buy === isBuy)
+const filterTransactionType = transactionType => filter(x => {
+  return transactionType === 'all' ? true : transactionType === 'expense' ? x.is_buy : !x.is_buy
+})
 
 // get the data we care the most about
 const plunkData = map(({ date, is_buy, quantity, unit_price }) => ({
@@ -51,11 +53,11 @@ function main() {
         return of([])
       }
 
-      const isBuy = form.fields['isBuy'].value
+      const transactionType = form.fields['transaction-type'].value
       const startDate = form.fields['start'].value
       const endDate = form.fields['end'].value
       return of(...data).pipe(
-        filterIsBuy(isBuy),
+        filterTransactionType(transactionType),
         inDateRange([startDate, endDate]),
         plunkData,
         backToArray,
