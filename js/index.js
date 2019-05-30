@@ -12,10 +12,6 @@ import startValidation from './validation'
 // transactions than each transactions by its self when manipulating the DOM
 const backToArray = reduce((data, x) => [...data, x], [])
 
-const filterTransactionType = transactionType => filter(x => {
-  return transactionType === 'all' ? true : transactionType === 'expense' ? x.is_buy : !x.is_buy
-})
-
 // get the data we care the most about
 const plunkData = map(({ date, is_buy, quantity, unit_price }) => ({
   date,
@@ -24,12 +20,73 @@ const plunkData = map(({ date, is_buy, quantity, unit_price }) => ({
   unit_price,
 }))
 
-const inDateRange = ([start, end]) => filter(x => {
-  // TODO: parsing error could occur here
-  const date = parse(x.date)
-  // adding one dya makes the range exclusive
-  return isWithinRange(date, start, end)
+const addTransactionType = map(
+  x => (
+    Object.freeze({
+      ...x,
+      transactionType: x.is_buy ? 'expense' : 'income'
+    })
+  )
+)
+
+const addCost = map(transaction => {
+  // slices the unit_price so we can combine the dollars and cents
+  // so 20.45 becomes 2045
+  // We want to work with `cents` not fractions of dollars
+  // This avoid floating point issues when working with fractions
+  const [whole, dec] = transaction.unit_price.toString().split('.')
+  // dec should have a length of 2 so if it doesn't exist, make it '00'
+  // if it only have a length of 1, than add a '0' so that '3' would become '30'
+  const decimal = dec == null ? '00' : dec.length === 1 ? `${dec}0` : dec 
+
+  const price = new Number(`${whole}${decimal}`)
+  const cost = transaction.quantity * price
+  // break the cost back into dollars and cents
+  // Gets the last 2 numbers in the string
+  const cents = cost.toString().slice(-2)
+  // Gets all numbers in the string expect for the last two
+  const dollars = cost.toString().slice(0, -2)
+
+  return Object.freeze({
+    ...transaction,
+    cost: `${dollars}.${cents}`,
+  })
 })
+
+// formats the cost with commas
+// 123456.78 into 123,456.78
+const addFormattedCost = map(transaction => {
+  const [whole, dec] = transaction.cost.split('.')
+  const chunks = []
+
+  for(let i=whole.length; i >= 0; i-=3) {
+    const start = i - 3 < 0 ? 0 : i - 3
+    const slice = whole.slice(start, i)
+    if (slice.length) {
+      chunks.push(slice)
+    }
+  }
+
+  return Object.freeze({
+    ...transaction,
+    formattedCost: `${chunks.reverse().join(',')}.${dec}`
+  })
+})
+
+function filterTransactionType(transactionType) {
+  return filter(x => transactionType === 'all'
+    ? true
+    : transactionType === 'expense' ? x.is_buy : !x.is_buy)
+}
+
+function inDateRange([start, end]) {
+  return filter(x => {
+    // TODO: parsing error could occur here
+    const date = parse(x.date)
+    // adding one dya makes the range exclusive
+    return isWithinRange(date, start, end)
+  })
+}
 
 function main() {
 
@@ -56,10 +113,14 @@ function main() {
       const transactionType = form.fields['transaction-type'].value
       const startDate = form.fields['start'].value
       const endDate = form.fields['end'].value
+
       return of(...data).pipe(
         filterTransactionType(transactionType),
         inDateRange([startDate, endDate]),
         plunkData,
+        addTransactionType,
+        addCost,
+        addFormattedCost,
         backToArray,
       )
     })
@@ -73,18 +134,32 @@ function main() {
     resultsEl.textContent = `There are ${transactions.length} results.`
 
     for (let transaction of transactions) {
-      const { date, unit_price, is_buy, quantity } = transaction
+      const {
+        date,
+        unit_price,
+        quantity,
+        formattedCost,
+        transactionType,
+      } = transaction
+
       let article = document.createElement('article')
       article.classList.add('transaction')
 
       let dateEl = document.createElement('div')
-      dateEl.textContent = format(date, 'MMM, D')
+      dateEl.textContent = format(date, 'MMM DD')
       dateEl.classList.add('date')
       article.appendChild(dateEl)
 
+      let breakDownEl = document.createElement('div')
+      breakDownEl.textContent = `${quantity} x ${unit_price} =`
+      breakDownEl.classList.add('break-down')
+      article.appendChild(breakDownEl)
+
       let amount = document.createElement('div')
-      amount.textContent = quantity * unit_price
+      const sign = transactionType === 'expense' ? '-' : ''
+      amount.textContent = `${sign}${formattedCost} ISK`
       amount.classList.add('amount')
+      amount.classList.add(transactionType)
       article.appendChild(amount)
 
       transactionsEl.appendChild(article)

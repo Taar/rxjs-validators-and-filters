@@ -11,37 +11,44 @@
     <link rel="stylesheet" type="text/css" href="./main.css">
   </head>
   <body>
+    <header>
+      <h1 class="title">RxJS Filtering Example</h1>
+    </header>
     <main>
-      <form name="filters">
-        <div id="form-errors"></div>
+      <form>
+        <div id="form-errors" class="form-error error"></div>
+        <div class="form-filters">
+          <div class="filter">
+            <div class="filter-input">
+              <label for="transaction-type">Transaction type:</label>
+              <select id="transaction-type" name="transaction-type">
+                <option value="all" selected>All</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+            </div>
+          </div>
 
-        <div>
-          <label for="transaction-type">Transaction type:</label>
-          <select id="transaction-type" name="transaction-type">
-            <option value="all" selected>All</option>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-          </select>
+          <div class="filter">
+            <span id="start-error" class="error"></span>
+            <div class="filter-input">
+              <label for="start">Start date:</label>
+              <input type="text" id="start" name="start"
+                    value="2019-05-01">
+            </div>
+          </div>
+
+          <div class="filter">
+            <span id="end-error" class="error"></span>
+            <div class="filter-input">
+              <label for="start">End date:</label>
+              <input type="text" id="end" name="end"
+                    value="2019-05-31">
+            </div>
+          </div>
         </div>
-
-        <div>
-          <span id="start-error"></span>
-          <label for="start">Start date:</label>
-
-          <input type="text" id="start" name="start"
-                value="2019-05-01">
-        </div>
-
-        <div>
-          <span id="end-error"></span>
-          <label for="start">End date:</label>
-
-          <input type="text" id="end" name="end"
-                value="2019-05-31">
-        </div>
-
       </form>
-      <div id="num-of-results"></div>
+      <div id="num-of-results" class="results"></div>
       <section id="transactions" class="transactions">
         <article>Loading ...</article>
       </section>

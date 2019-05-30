@@ -1,3 +1,44 @@
+.title, .results {
+  padding-left: .5rem;
+}
+
+.form-filters {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter {
+  display: flex;
+  flex-direction: column;
+  padding: .25rem;
+}
+
+.error {
+  color: white;
+  width: 100%;
+  background-color: red;
+  margin-bottom: .25rem;
+  padding-left: .25rem;
+}
+
+.form-error {
+  padding-left: .5rem;
+}
+
+.filter-input {
+  display: flex;
+  flex-direction: row;
+}
+
+.filter-input > label {
+  width: 200px;
+  padding-left: .25rem;
+}
+
+.filter-input > input {
+  min-width: 200px;
+}
+
 .transactions {
   display: flex;
   flex-direction: row;
@@ -10,5 +51,43 @@
   max-width: 200px;
   min-width: 200px;
   margin: .5rem;
-  border: solid 1px black;
+  padding: .2rem;
+}
+
+.transaction > .date {
+  text-align: center;
+  background-color: rebeccapurple;
+  color: white;
+  width: auto;
+  padding: .2rem;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+  font-weight: bold;
+}
+
+.transaction > .break-down {
+  background-color: rgba(102, 51, 153, 0.26);
+  width: auto;
+  padding: .2rem;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+  color: rebeccapurple;
+}
+
+.transaction > .amount {
+  width: auto;
+  padding: .2rem;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+  font-weight: bold;
+}
+
+.transaction > .amount.income {
+  color: white;
+  background-color: forestgreen;
+}
+
+.transaction > .amount.expense {
+  color: white;
+  background-color: crimson;
 }

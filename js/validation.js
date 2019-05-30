@@ -61,6 +61,7 @@ export default function startValidation() {
 
   const [transactionTypeField$, startField$, endField$] = getFieldObservables(transactionTypeEvent$, startEvent$, endEvent$, validDateRange)
 
+  // Modify the DOM if the Field has an error
   startField$.subscribe(dateInputSubscriber)
   endField$.subscribe(dateInputSubscriber)
 
@@ -94,7 +95,14 @@ function buildFormObservable(transactionTypeField$, startField$, endField$) {
 
       if (!start.hasError || !end.hasError) {
         if (isBefore(endDate, startDate)) {
-          errors.push(Object.freeze(new FormValidationError({ fieldName: end.fieldName, message: 'End date cannot be before the start end' })))
+          errors.push(
+            Object.freeze(
+              new FormValidationError({
+                fieldName: end.fieldName,
+                message: 'End date cannot be before the start date',
+              })
+            )
+          )
         }
       }
 
