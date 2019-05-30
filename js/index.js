@@ -1,8 +1,8 @@
 import { of, combineLatest } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { filter, pluck, reduce, map, concatMap } from 'rxjs/operators'
+import { filter, pluck, reduce, map, concatMap, switchMap, tap } from 'rxjs/operators'
 
-import { format, parse, isWithinRange, endOfDay } from 'date-fns'
+import { format, parse, isWithinRange } from 'date-fns'
 
 import startValidation from './validation'
 
@@ -42,14 +42,12 @@ const addCost = map(transaction => {
   const price = new Number(`${whole}${decimal}`)
   const cost = transaction.quantity * price
   // break the cost back into dollars and cents
-  // Gets the last 2 numbers in the string
-  const cents = cost.toString().slice(-2)
-  // Gets all numbers in the string expect for the last two
-  const dollars = cost.toString().slice(0, -2)
+  const dollars = centsToDollarsString(cost)
 
   return Object.freeze({
     ...transaction,
-    cost: `${dollars}.${cents}`,
+    cost: dollars,
+    unitPriceInCents: price,
   })
 })
 
@@ -57,21 +55,39 @@ const addCost = map(transaction => {
 // 123456.78 into 123,456.78
 const addFormattedCost = map(transaction => {
   const [whole, dec] = transaction.cost.split('.')
+  const formatted = formatNumber(whole)
+
+  return Object.freeze({
+    ...transaction,
+    formattedCost: `${formatted}.${dec}`
+  })
+})
+
+function formatNumber(numberStr) {
   const chunks = []
 
-  for(let i=whole.length; i >= 0; i-=3) {
+  for(let i=numberStr.length; i >= 0; i-=3) {
     const start = i - 3 < 0 ? 0 : i - 3
-    const slice = whole.slice(start, i)
+    const slice = numberStr.slice(start, i)
     if (slice.length) {
       chunks.push(slice)
     }
   }
+  return chunks.reverse().join(',')
+}
 
-  return Object.freeze({
-    ...transaction,
-    formattedCost: `${chunks.reverse().join(',')}.${dec}`
-  })
-})
+function centsToDollarsString(number) {
+  // Gets the last 2 numbers in the string
+  const cents = number.toString().slice(-2)
+
+  if (Math.abs(number) < 100) {
+    return `0.${cents.length === 1 ? `${cents}0` : cents}`
+  }
+
+  // Gets all numbers in the string expect for the last two
+  const dollars = number.toString().slice(0, -2)
+  return `${dollars}.${cents}`
+}
 
 function filterTransactionType(transactionType) {
   return filter(x => transactionType === 'all'
@@ -100,7 +116,7 @@ function main() {
   const resultsEl = document.getElementById('num-of-results')
 
   // Combine our data and form data so we can filter the transactions 
-  combineLatest(data$, form$).pipe(
+  const transactions$ = combineLatest(data$, form$).pipe(
     concatMap(([data, form]) => {
       // If the form object has errors we'll emit an empty array
       // Because the form data is invalid, we can't filter the data so
@@ -124,8 +140,30 @@ function main() {
         backToArray,
       )
     })
+  )
+
+  const totalEl = document.getElementById('total')
+  // Figure out what the total is from the filtered tranactions
+  transactions$.pipe(
+    switchMap(transactions => of(...transactions).pipe(
+      reduce((total, t) =>
+        total + ((t.unitPriceInCents * t.quantity) * (t.is_buy ? -1 : 1))
+      , 0),
+      map(total => centsToDollarsString(total)),
+      map(total => {
+        const [whole, cents] = total.split('.')
+        const signed = whole[0] === '-'
+
+        const formatted = signed ? formatNumber(whole.slice(1)) : formatNumber(whole)
+        return `${signed ? '-': ''}${formatted}.${cents}`
+      })
+    )),
+  ).subscribe(total => {
+    totalEl.textContent = `Totaling ${total} ISK`
+  })
+  
   // Below is where we'll update the DOM to display the filtered transactions
-  ).subscribe(transactions => {
+  transactions$.subscribe(transactions => {
     // This will remove all child elements from the transaction element
     while (transactionsEl.lastChild) {
       transactionsEl.lastChild.remove()
