@@ -146,10 +146,14 @@ function main() {
   // Figure out what the total is from the filtered tranactions
   transactions$.pipe(
     switchMap(transactions => of(...transactions).pipe(
+      // add up all the transactions. Also need to make sure the number is signed
       reduce((total, t) =>
         total + ((t.unitPriceInCents * t.quantity) * (t.is_buy ? -1 : 1))
       , 0),
+      // convert the number which is in cents to a dollar amount
       map(total => centsToDollarsString(total)),
+      // Format the dollar amount string so it's easier to read
+      // eg 1,050,571,632.79 apposed to 1050571632.79
       map(total => {
         const [whole, cents] = total.split('.')
         const signed = whole[0] === '-'

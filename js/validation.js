@@ -1,5 +1,5 @@
 import { fromEvent, of, combineLatest } from 'rxjs'
-import { startWith, map, concatMap, share } from 'rxjs/operators'
+import { startWith, map, concatMap } from 'rxjs/operators'
 
 import { isValid,  parse, isBefore, isWithinRange, format } from 'date-fns'
 
