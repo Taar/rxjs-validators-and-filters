@@ -42,61 +42,6 @@ export class FormValidationError {
 
 const formatString = 'YYYY-MM-DD'
 
-export default function startValidation() {
-  const transactionsTypeEl = document.getElementById('transaction-type')
-  const transactionTypeEvent$ = fromEvent(transactionsTypeEl, 'change').pipe(
-    map(event => event.target.value),
-    startWith(transactionsTypeEl.value)
-  )
-
-  const startDateEl = document.getElementById('start')
-  const startEvent$ = fromEvent(startDateEl, 'input').pipe(
-    map(event => event.target.value),
-    startWith(startDateEl.value)
-  )
-
-  const endDateEl = document.getElementById('end')
-  const endEvent$ = fromEvent(endDateEl, 'input').pipe(
-    map(event => event.target.value),
-    startWith(endDateEl.value)
-  )
-
-  const validDateRange = [parse('2019-05-01'), parse('2019-05-31')]
-
-  const [transactionTypeField$, startField$, endField$] = getFieldObservables(
-    transactionTypeEvent$,
-    startEvent$,
-    endEvent$,
-    validDateRange
-  )
-
-  const form$ = buildFormObservable(
-    transactionTypeField$,
-    startField$,
-    endField$
-  )
-
-  // Modify the DOM if the Field has an error
-  startField$.subscribe(dateInputSubscriber)
-  endField$.subscribe(dateInputSubscriber)
-
-  // If there are any form validation errors, add them to the DOM
-  const formErrorsEl = document.getElementById('form-errors')
-  form$.subscribe(form => {
-    while (formErrorsEl.lastChild) {
-      formErrorsEl.lastChild.remove()
-    }
-
-    for (let error of form.errors) {
-      const errorEl = document.createElement('div')
-      errorEl.textContent = `Field: ${error.fieldName} - ${error.message}`
-      formErrorsEl.appendChild(errorEl)
-    }
-  })
-
-  return form$
-}
-
 function buildFormObservable(transactionTypeField$, startField$, endField$) {
   return combineLatest(transactionTypeField$, startField$, endField$).pipe(
     map(fields =>
@@ -196,4 +141,59 @@ function getFieldObservables(transactionType$, start$, end$, validDateRange) {
       validDateString(validDateRange)
     ),
   ]
+}
+
+export default function startValidation() {
+  const transactionsTypeEl = document.getElementById('transaction-type')
+  const transactionTypeEvent$ = fromEvent(transactionsTypeEl, 'change').pipe(
+    map(event => event.target.value),
+    startWith(transactionsTypeEl.value)
+  )
+
+  const startDateEl = document.getElementById('start')
+  const startEvent$ = fromEvent(startDateEl, 'input').pipe(
+    map(event => event.target.value),
+    startWith(startDateEl.value)
+  )
+
+  const endDateEl = document.getElementById('end')
+  const endEvent$ = fromEvent(endDateEl, 'input').pipe(
+    map(event => event.target.value),
+    startWith(endDateEl.value)
+  )
+
+  const validDateRange = [parse('2019-05-01'), parse('2019-05-31')]
+
+  const [transactionTypeField$, startField$, endField$] = getFieldObservables(
+    transactionTypeEvent$,
+    startEvent$,
+    endEvent$,
+    validDateRange
+  )
+
+  const form$ = buildFormObservable(
+    transactionTypeField$,
+    startField$,
+    endField$
+  )
+
+  // Modify the DOM if the Field has an error
+  startField$.subscribe(dateInputSubscriber)
+  endField$.subscribe(dateInputSubscriber)
+
+  // If there are any form validation errors, add them to the DOM
+  const formErrorsEl = document.getElementById('form-errors')
+  form$.subscribe(form => {
+    while (formErrorsEl.lastChild) {
+      formErrorsEl.lastChild.remove()
+    }
+
+    for (let error of form.errors) {
+      const errorEl = document.createElement('div')
+      errorEl.textContent = `Field: ${error.fieldName} - ${error.message}`
+      formErrorsEl.appendChild(errorEl)
+    }
+  })
+
+  return form$
 }
