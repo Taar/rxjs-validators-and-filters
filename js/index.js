@@ -1,6 +1,13 @@
 import { of, combineLatest } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
-import { filter, pluck, reduce, map, concatMap, switchMap, tap } from 'rxjs/operators'
+import {
+  filter,
+  pluck,
+  reduce,
+  map,
+  concatMap,
+  switchMap,
+} from 'rxjs/operators'
 
 import { format, parse, isWithinRange } from 'date-fns'
 
@@ -20,13 +27,8 @@ const plunkData = map(({ date, is_buy, quantity, unit_price }) => ({
   unit_price,
 }))
 
-const addTransactionType = map(
-  x => (
-    Object.freeze({
-      ...x,
-      transactionType: x.is_buy ? 'expense' : 'income'
-    })
-  )
+const addTransactionType = map(x =>
+  Object.freeze({ ...x, transactionType: x.is_buy ? 'expense' : 'income' })
 )
 
 const addCost = map(transaction => {
@@ -37,7 +39,7 @@ const addCost = map(transaction => {
   const [whole, dec] = transaction.unit_price.toString().split('.')
   // dec should have a length of 2 so if it doesn't exist, make it '00'
   // if it only have a length of 1, than add a '0' so that '3' would become '30'
-  const decimal = dec == null ? '00' : dec.length === 1 ? `${dec}0` : dec 
+  const decimal = dec == null ? '00' : dec.length === 1 ? `${dec}0` : dec
 
   const price = new Number(`${whole}${decimal}`)
   const cost = transaction.quantity * price
@@ -59,14 +61,14 @@ const addFormattedCost = map(transaction => {
 
   return Object.freeze({
     ...transaction,
-    formattedCost: `${formatted}.${dec}`
+    formattedCost: `${formatted}.${dec}`,
   })
 })
 
 function formatNumber(numberStr) {
   const chunks = []
 
-  for(let i=numberStr.length; i >= 0; i-=3) {
+  for (let i = numberStr.length; i >= 0; i -= 3) {
     const start = i - 3 < 0 ? 0 : i - 3
     const slice = numberStr.slice(start, i)
     if (slice.length) {
@@ -90,9 +92,13 @@ function centsToDollarsString(number) {
 }
 
 function filterTransactionType(transactionType) {
-  return filter(x => transactionType === 'all'
-    ? true
-    : transactionType === 'expense' ? x.is_buy : !x.is_buy)
+  return filter(x =>
+    transactionType === 'all'
+      ? true
+      : transactionType === 'expense'
+      ? x.is_buy
+      : !x.is_buy
+  )
 }
 
 function inDateRange([start, end]) {
@@ -105,17 +111,14 @@ function inDateRange([start, end]) {
 }
 
 function main() {
-
   const form$ = startValidation()
 
-  const data$ = ajax.getJSON('/transactions.json').pipe(
-    pluck('transactions'),
-  )
+  const data$ = ajax.getJSON('/transactions.json').pipe(pluck('transactions'))
 
   const transactionsEl = document.getElementById('transactions')
   const resultsEl = document.getElementById('num-of-results')
 
-  // Combine our data and form data so we can filter the transactions 
+  // Combine our data and form data so we can filter the transactions
   const transactions$ = combineLatest(data$, form$).pipe(
     concatMap(([data, form]) => {
       // If the form object has errors we'll emit an empty array
@@ -137,35 +140,43 @@ function main() {
         addTransactionType,
         addCost,
         addFormattedCost,
-        backToArray,
+        backToArray
       )
     })
   )
 
   const totalEl = document.getElementById('total')
   // Figure out what the total is from the filtered tranactions
-  transactions$.pipe(
-    switchMap(transactions => of(...transactions).pipe(
-      // add up all the transactions. Also need to make sure the number is signed
-      reduce((total, t) =>
-        total + ((t.unitPriceInCents * t.quantity) * (t.is_buy ? -1 : 1))
-      , 0),
-      // convert the number which is in cents to a dollar amount
-      map(total => centsToDollarsString(total)),
-      // Format the dollar amount string so it's easier to read
-      // eg 1,050,571,632.79 apposed to 1050571632.79
-      map(total => {
-        const [whole, cents] = total.split('.')
-        const signed = whole[0] === '-'
+  transactions$
+    .pipe(
+      switchMap(transactions =>
+        of(...transactions).pipe(
+          // add up all the transactions. Also need to make sure the number is signed
+          reduce(
+            (total, t) =>
+              total + t.unitPriceInCents * t.quantity * (t.is_buy ? -1 : 1),
+            0
+          ),
+          // convert the number which is in cents to a dollar amount
+          map(total => centsToDollarsString(total)),
+          // Format the dollar amount string so it's easier to read
+          // eg 1,050,571,632.79 apposed to 1050571632.79
+          map(total => {
+            const [whole, cents] = total.split('.')
+            const signed = whole[0] === '-'
 
-        const formatted = signed ? formatNumber(whole.slice(1)) : formatNumber(whole)
-        return `${signed ? '-': ''}${formatted}.${cents}`
-      })
-    )),
-  ).subscribe(total => {
-    totalEl.textContent = `Totaling ${total} ISK`
-  })
-  
+            const formatted = signed
+              ? formatNumber(whole.slice(1))
+              : formatNumber(whole)
+            return `${signed ? '-' : ''}${formatted}.${cents}`
+          })
+        )
+      )
+    )
+    .subscribe(total => {
+      totalEl.textContent = `Totaling ${total} ISK`
+    })
+
   // Below is where we'll update the DOM to display the filtered transactions
   transactions$.subscribe(transactions => {
     // This will remove all child elements from the transaction element

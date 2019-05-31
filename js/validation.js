@@ -1,10 +1,10 @@
 import { fromEvent, of, combineLatest } from 'rxjs'
 import { startWith, map, concatMap } from 'rxjs/operators'
 
-import { isValid,  parse, isBefore, isWithinRange, format } from 'date-fns'
+import { isValid, parse, isBefore, isWithinRange, format } from 'date-fns'
 
 export class Field {
-  constructor({fieldName, value, error=null}) {
+  constructor({ fieldName, value, error = null }) {
     this.fieldName = fieldName
     this.value = value
     this.validationError = error
@@ -16,16 +16,20 @@ export class Field {
 }
 
 export class Form {
-  constructor({ fields={}, name, errors=[] }) {
+  constructor({ fields = {}, name, errors = [] }) {
     this.fields = fields
     this.name = name
     this.errors = errors
   }
 
   get hasErrors() {
-    return this.errors.length > 0 ||
-      Object.values(this.fields)
-        .reduce((hasErrors, field) => hasErrors ? hasErrors : field.hasError, false)
+    return (
+      this.errors.length > 0 ||
+      Object.values(this.fields).reduce(
+        (hasErrors, field) => (hasErrors ? hasErrors : field.hasError),
+        false
+      )
+    )
   }
 }
 
@@ -42,35 +46,44 @@ export default function startValidation() {
   const transactionsTypeEl = document.getElementById('transaction-type')
   const transactionTypeEvent$ = fromEvent(transactionsTypeEl, 'change').pipe(
     map(event => event.target.value),
-    startWith(transactionsTypeEl.value),
+    startWith(transactionsTypeEl.value)
   )
 
   const startDateEl = document.getElementById('start')
   const startEvent$ = fromEvent(startDateEl, 'input').pipe(
     map(event => event.target.value),
-    startWith(startDateEl.value),
+    startWith(startDateEl.value)
   )
 
   const endDateEl = document.getElementById('end')
   const endEvent$ = fromEvent(endDateEl, 'input').pipe(
     map(event => event.target.value),
-    startWith(endDateEl.value),
+    startWith(endDateEl.value)
   )
 
   const validDateRange = [parse('2019-05-01'), parse('2019-05-31')]
 
-  const [transactionTypeField$, startField$, endField$] = getFieldObservables(transactionTypeEvent$, startEvent$, endEvent$, validDateRange)
+  const [transactionTypeField$, startField$, endField$] = getFieldObservables(
+    transactionTypeEvent$,
+    startEvent$,
+    endEvent$,
+    validDateRange
+  )
+
+  const form$ = buildFormObservable(
+    transactionTypeField$,
+    startField$,
+    endField$
+  )
 
   // Modify the DOM if the Field has an error
   startField$.subscribe(dateInputSubscriber)
   endField$.subscribe(dateInputSubscriber)
 
-  const form$ = buildFormObservable(transactionTypeField$, startField$, endField$)
-
   // If there are any form validation errors, add them to the DOM
   const formErrorsEl = document.getElementById('form-errors')
   form$.subscribe(form => {
-    while(formErrorsEl.lastChild) {
+    while (formErrorsEl.lastChild) {
       formErrorsEl.lastChild.remove()
     }
 
@@ -86,7 +99,14 @@ export default function startValidation() {
 
 function buildFormObservable(transactionTypeField$, startField$, endField$) {
   return combineLatest(transactionTypeField$, startField$, endField$).pipe(
-    map(fields => Object.freeze(fields.reduce((fieldObj, field) => ({ ...fieldObj, [field.fieldName]: field }), {}))),
+    map(fields =>
+      Object.freeze(
+        fields.reduce(
+          (fieldObj, field) => ({ ...fieldObj, [field.fieldName]: field }),
+          {}
+        )
+      )
+    ),
     concatMap(fields => {
       const { start, end } = fields
       const startDate = start.value
@@ -107,7 +127,7 @@ function buildFormObservable(transactionTypeField$, startField$, endField$) {
       }
 
       return of(Object.freeze(new Form({ fields, name: 'filters', errors })))
-    }),
+    })
   )
 }
 
@@ -127,7 +147,15 @@ function validDateString(validDateRange) {
   return concatMap(([dateString, fieldName]) => {
     const date = parse(dateString)
     if (!isValid(date)) {
-      return of(Object.freeze(new Field({fieldName, value: date, error: 'Not a valid date string.'})))
+      return of(
+        Object.freeze(
+          new Field({
+            fieldName,
+            value: date,
+            error: 'Not a valid date string.',
+          })
+        )
+      )
     }
     if (!isWithinRange(date, ...validDateRange)) {
       return of(
@@ -135,13 +163,15 @@ function validDateString(validDateRange) {
           new Field({
             fieldName,
             value: date,
-            error: `Date must be between ${format(validDateRange[0], formatString)} and ${format(validDateRange[1], formatString)}`,
+            error: `Date must be between ${format(
+              validDateRange[0],
+              formatString
+            )} and ${format(validDateRange[1], formatString)}`,
           })
         )
       )
     }
-    const field = Object.freeze(new Field({fieldName, value: date}))
-    return of(field)
+    return of(Object.freeze(new Field({ fieldName, value: date })))
   })
 }
 
@@ -151,15 +181,19 @@ function getFieldObservables(transactionType$, start$, end$, validDateRange) {
   return [
     transactionType$.pipe(
       // transactionType doesn't have any validation so we just create a Field object to emit
-      map(transactionType => Object.freeze(new Field({ fieldName: 'transaction-type', value: transactionType })))
+      map(transactionType =>
+        Object.freeze(
+          new Field({ fieldName: 'transaction-type', value: transactionType })
+        )
+      )
     ),
     start$.pipe(
       map(dateString => [dateString, 'start']),
-      validDateString(validDateRange),
+      validDateString(validDateRange)
     ),
     end$.pipe(
       map(dateString => [dateString, 'end']),
-      validDateString(validDateRange),
+      validDateString(validDateRange)
     ),
   ]
 }

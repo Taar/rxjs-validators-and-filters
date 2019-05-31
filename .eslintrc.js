@@ -24,7 +24,5 @@ module.exports = {
     quotes: ['error', 'single'],
     semi: ['error', 'never'],
     "node/no-unsupported-features/es-syntax": "off",
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn"
   }
 }
