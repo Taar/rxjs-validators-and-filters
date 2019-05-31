@@ -21,3 +21,4 @@ This should install everything needed and also serve the `transaction.json` file
 - Add better design
 - Add more features and examples of using RxJS
 - Add more documentation
+- Add unit tests
