@@ -1,5 +1,5 @@
 import { fromEvent, of, combineLatest } from 'rxjs'
-import { startWith, map, concatMap } from 'rxjs/operators'
+import { startWith, map, concatMap, tap } from 'rxjs/operators'
 
 import { isValid, parse, isBefore, isWithinRange, format } from 'date-fns'
 
@@ -76,7 +76,7 @@ function buildFormObservable(transactionTypeField$, startField$, endField$) {
   )
 }
 
-function dateInputSubscriber(field) {
+function fieldValidationSideEffect(field) {
   const errorEl = document.getElementById(`${field.fieldName}-error`)
   const input = document.getElementById(field.fieldName)
   if (field.hasError) {
@@ -120,80 +120,56 @@ function validDateString(validDateRange) {
   })
 }
 
-// Transform input data into a Field object. The Field object will have additional
-// information regarding if the input that was emitted is valid or not
-function getFieldObservables(transactionType$, start$, end$, validDateRange) {
-  return [
-    transactionType$.pipe(
-      // transactionType doesn't have any validation so we just create a Field object to emit
-      map(transactionType =>
-        Object.freeze(
-          new Field({ fieldName: 'transaction-type', value: transactionType })
-        )
-      )
-    ),
-    start$.pipe(
-      map(dateString => [dateString, 'start']),
-      validDateString(validDateRange)
-    ),
-    end$.pipe(
-      map(dateString => [dateString, 'end']),
-      validDateString(validDateRange)
-    ),
-  ]
-}
-
 export default function startValidation() {
   const transactionsTypeEl = document.getElementById('transaction-type')
-  const transactionTypeEvent$ = fromEvent(transactionsTypeEl, 'change').pipe(
+  const transactionTypeField$ = fromEvent(transactionsTypeEl, 'change').pipe(
     map(event => event.target.value),
-    startWith(transactionsTypeEl.value)
-  )
-
-  const startDateEl = document.getElementById('start')
-  const startEvent$ = fromEvent(startDateEl, 'input').pipe(
-    map(event => event.target.value),
-    startWith(startDateEl.value)
-  )
-
-  const endDateEl = document.getElementById('end')
-  const endEvent$ = fromEvent(endDateEl, 'input').pipe(
-    map(event => event.target.value),
-    startWith(endDateEl.value)
+    startWith(transactionsTypeEl.value),
+    map(transactionType =>
+      Object.freeze(
+        new Field({ fieldName: 'transaction-type', value: transactionType })
+      )
+    )
   )
 
   const validDateRange = [parse('2019-05-01'), parse('2019-05-31')]
 
-  const [transactionTypeField$, startField$, endField$] = getFieldObservables(
-    transactionTypeEvent$,
-    startEvent$,
-    endEvent$,
-    validDateRange
+  const startDateEl = document.getElementById('start')
+  const startField$ = fromEvent(startDateEl, 'input').pipe(
+    map(event => event.target.value),
+    startWith(startDateEl.value),
+    map(dateString => [dateString, 'start']),
+    validDateString(validDateRange),
+    tap(fieldValidationSideEffect)
   )
 
-  const form$ = buildFormObservable(
+  const endDateEl = document.getElementById('end')
+  const endField$ = fromEvent(endDateEl, 'input').pipe(
+    map(event => event.target.value),
+    startWith(endDateEl.value),
+    map(dateString => [dateString, 'end']),
+    validDateString(validDateRange),
+    tap(fieldValidationSideEffect)
+  )
+
+  const formErrorsEl = document.getElementById('form-errors')
+
+  return buildFormObservable(
     transactionTypeField$,
     startField$,
     endField$
+  ).pipe(
+    // Form validation side effect
+    tap(form => {
+      while (formErrorsEl.lastChild) {
+        formErrorsEl.lastChild.remove()
+      }
+
+      for (let error of form.errors) {
+        const errorEl = document.createElement('div')
+        errorEl.textContent = `Field: ${error.fieldName} - ${error.message}`
+        formErrorsEl.appendChild(errorEl)
+      }
+    })
   )
-
-  // Modify the DOM if the Field has an error
-  startField$.subscribe(dateInputSubscriber)
-  endField$.subscribe(dateInputSubscriber)
-
-  // If there are any form validation errors, add them to the DOM
-  const formErrorsEl = document.getElementById('form-errors')
-  form$.subscribe(form => {
-    while (formErrorsEl.lastChild) {
-      formErrorsEl.lastChild.remove()
-    }
-
-    for (let error of form.errors) {
-      const errorEl = document.createElement('div')
-      errorEl.textContent = `Field: ${error.fieldName} - ${error.message}`
-      formErrorsEl.appendChild(errorEl)
-    }
-  })
-
-  return form$
 }
